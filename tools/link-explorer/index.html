@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <!-- Theme color for iOS Safari status bar -->
+  <meta name="theme-color" content="#f8f3e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1816" media="(prefers-color-scheme: dark)">
+  
+  <title>Link Explorer</title>
+  <meta name="description" content="Explore the link hierarchy of any webpage. Progressively discover and navigate through linked pages in a collapsible tree view.">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Template Styles -->
+  <link rel="stylesheet" href="../../styles.css">
+  
+  <!-- Link Explorer Specific Styles -->
+  <style>
+    /* URL Input Area */
+    .url-input-group {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+    
+    .url-input-group .input {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+    }
+    
+    .url-input-group .btn {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    
+    @media (max-width: 540px) {
+      .url-input-group {
+        flex-direction: column;
+      }
+      
+      .url-input-group .btn {
+        width: 100%;
+      }
+    }
+    
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      padding: var(--space-sm) var(--space-base);
+      background: var(--color-surface);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-xl);
+      flex-wrap: wrap;
+    }
+    
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+    
+    .stat-value {
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--pine);
+    }
+    
+    /* Tree Container */
+    .tree-container {
+      position: relative;
+      min-height: 100px;
+    }
+    
+    /* Tree Styles */
+    .link-tree {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: var(--text-base);
+    }
+    
+    .link-tree ul {
+      list-style: none;
+      padding-left: 1.5rem;
+      margin: 0;
+      border-left: 1px dashed var(--color-border);
+      margin-left: 0.6rem;
+    }
+    
+    .tree-node {
+      position: relative;
+      padding: var(--space-xs) 0;
+    }
+    
+    .tree-node-content {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      transition: background-color var(--duration-fast) ease;
+    }
+    
+    .tree-node-content:hover {
+      background: var(--color-surface-hover);
+    }
+    
+    /* Expand/Collapse Toggle */
+    .tree-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all var(--duration-fast) ease;
+      margin-top: 2px;
+    }
+    
+    .tree-toggle:hover {
+      border-color: var(--pine);
+      color: var(--pine);
+      background: var(--color-surface-active);
+    }
+    
+    .tree-toggle.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    
+    .tree-toggle.loading::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--pine);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    .tree-toggle.loading svg {
+      display: none;
+    }
+    
+    .tree-toggle.expanded {
+      background: var(--color-surface-active);
+      border-color: var(--pine);
+      color: var(--pine);
+    }
+    
+    .tree-toggle.leaf {
+      background: transparent;
+      border-color: transparent;
+      cursor: default;
+      opacity: 0.4;
+    }
+    
+    .tree-toggle.leaf:hover {
+      background: transparent;
+      border-color: transparent;
+      color: var(--color-text-muted);
+    }
+    
+    .tree-toggle svg {
+      width: 10px;
+      height: 10px;
+      transition: transform var(--duration-fast) ease;
+    }
+    
+    .tree-toggle.expanded svg {
+      transform: rotate(90deg);
+    }
+    
+    /* Link Info */
+    .tree-link-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .tree-link-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    
+    .tree-link-text {
+      font-weight: 500;
+      color: var(--color-text);
+      word-break: break-word;
+    }
+    
+    .tree-link-external {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: var(--color-text-muted);
+      opacity: 0;
+      transition: opacity var(--duration-fast) ease;
+    }
+    
+    .tree-node-content:hover .tree-link-external {
+      opacity: 1;
+    }
+    
+    .tree-link-external:hover {
+      color: var(--pine);
+    }
+    
+    .tree-link-url {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    
+    /* Link Count Badge */
+    .link-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6px;
+      background: var(--color-surface-active);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--pine);
+      font-family: var(--font-mono);
+    }
+    
+    .link-count-badge.external {
+      background: rgba(196, 91, 55, 0.15);
+      color: var(--clay);
+    }
+    
+    /* Error State */
+    .tree-error {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 2px 8px;
+      background: rgba(196, 91, 55, 0.1);
+      border-radius: var(--radius-sm);
+      color: var(--clay);
+      font-size: var(--text-xs);
+    }
+    
+    /* Root Node Special Styling */
+    .tree-node.root > .tree-node-content {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      padding: var(--space-base);
+    }
+    
+    .tree-node.root > .tree-node-content:hover {
+      background: var(--color-surface-hover);
+    }
+    
+    .tree-node.root .tree-link-text {
+      font-size: var(--text-lg);
+    }
+    
+    /* Loading Spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-overlay);
+      border-radius: var(--radius-md);
+      z-index: 10;
+    }
+    
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--pine);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    /* Empty State */
+    .tree-empty {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--color-text-muted);
+    }
+    
+    .tree-empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: var(--space-base);
+      opacity: 0.5;
+    }
+    
+    /* Controls */
+    .tree-controls {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+    }
+    
+    .tree-controls .btn {
+      font-size: var(--text-sm);
+    }
+    
+    /* Depth Indicator */
+    .depth-indicator {
+      display: none;
+      padding: 2px 6px;
+      background: var(--color-surface);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-family: var(--font-mono);
+    }
+    
+    /* Footer */
+    .tool-footer {
+      text-align: center;
+      margin-top: var(--space-xl);
+      padding-top: var(--space-lg);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .tool-footer a {
+      color: var(--aero);
+    }
+    
+    .tool-footer a:hover {
+      color: var(--clay);
+    }
+    
+    /* Domain Filter Pills */
+    .domain-filters {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+      margin-top: var(--space-sm);
+    }
+    
+    .domain-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      padding: 4px 10px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-family: var(--font-mono);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all var(--duration-fast) ease;
+    }
+    
+    .domain-pill:hover {
+      border-color: var(--pine);
+      color: var(--pine);
+    }
+    
+    .domain-pill.active {
+      background: var(--color-surface-active);
+      border-color: var(--pine);
+      color: var(--pine);
+    }
+    
+    .domain-pill .count {
+      padding: 1px 5px;
+      background: var(--color-bg);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="tool-icon">🔗</div>
+        <h1 class="tool-title">Link Explorer</h1>
+      </div>
+      
+      <div class="top-bar-right">
+        <button type="button" class="header-btn" id="theme-toggle" aria-label="Toggle dark mode">
+          <span class="theme-toggle-wrap">
+            <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+        
+        <button type="button" class="header-btn" id="info-btn" aria-label="Show tool information">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="4" r="0.5" fill="currentColor"></circle>
+            <line x1="10" y1="8" x2="10" y2="16"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="frame">
+      <section class="panel">
+        <div class="panel-head">
+          <span class="eyebrow">Explore Links</span>
+        </div>
+        
+        <div class="panel-content">
+          <!-- URL Input -->
+          <div class="url-input-group">
+            <input 
+              type="url" 
+              id="url-input" 
+              class="input" 
+              placeholder="https://example.com/page"
+              aria-label="Enter URL to explore"
+            >
+            <button type="button" class="btn primary" id="explore-btn">
+              🔍 Explore
+            </button>
+          </div>
+          
+          <!-- Stats Bar (hidden initially) -->
+          <div class="stats-bar" id="stats-bar" hidden>
+            <div class="stat-item">
+              <span>📊 Total Links:</span>
+              <span class="stat-value" id="stat-total">0</span>
+            </div>
+            <div class="stat-item">
+              <span>📂 Expanded:</span>
+              <span class="stat-value" id="stat-expanded">0</span>
+            </div>
+            <div class="stat-item">
+              <span>🔗 Unique Domains:</span>
+              <span class="stat-value" id="stat-domains">0</span>
+            </div>
+          </div>
+          
+          <!-- Tree Controls (hidden initially) -->
+          <div class="tree-controls" id="tree-controls" hidden>
+            <button type="button" class="btn small" id="collapse-all-btn">
+              ⬆️ Collapse All
+            </button>
+            <button type="button" class="btn small" id="clear-btn">
+              🗑️ Clear
+            </button>
+          </div>
+          
+          <!-- Tree Container -->
+          <div class="tree-container" id="tree-container">
+            <!-- Empty State -->
+            <div class="tree-empty" id="empty-state">
+              <div class="tree-empty-icon">🌐</div>
+              <p class="mb-0">Enter a URL above to explore its link hierarchy</p>
+              <p class="muted mt-sm" style="font-size: var(--text-sm);">
+                Paste any webpage URL and discover linked pages in an interactive tree
+              </p>
+            </div>
+            
+            <!-- Tree will be rendered here -->
+            <ul class="link-tree" id="link-tree" hidden></ul>
+          </div>
+        </div>
+      </section>
+      
+      <footer class="tool-footer">
+        <p>
+          Built by <a href="https://mhismail.com" target="_blank" rel="noopener">Mohsin</a> · 
+          <a href="../../">View the Toolbox</a>
+        </p>
+      </footer>
+    </main>
+
+    <!-- Modal Overlay (for iOS Safari status bar fix) -->
+    <div id="modal-overlay" class="modal-overlay" aria-hidden="true"></div>
+
+    <!-- Info Modal -->
+    <dialog id="info-modal" class="info-modal">
+      <div class="modal-header">
+        <h2>About Link Explorer</h2>
+        <button type="button" class="modal-close" aria-label="Close modal">×</button>
+      </div>
+      <div class="modal-body">
+        <h3>What is this?</h3>
+        <p>
+          Link Explorer helps you visualize the link structure of any webpage. It builds 
+          an interactive, collapsible tree showing all pages linked from the URL you provide.
+        </p>
+        
+        <h3>How to Use</h3>
+        <ol>
+          <li>Paste any webpage URL into the input field</li>
+          <li>Click "Explore" to fetch and parse the page</li>
+          <li>Click the <strong>▶</strong> toggle next to any link to expand it and discover its child links</li>
+          <li>Continue expanding to explore deeper levels of the site hierarchy</li>
+          <li>Click a link's external icon to open it in a new tab</li>
+        </ol>
+        
+        <h3>Smart Content Detection</h3>
+        <p>
+          The tool attempts to extract links only from the <strong>main content</strong> of each page, 
+          ignoring common navigation elements like:
+        </p>
+        <ul>
+          <li>Navigation menus and sidebars</li>
+          <li>Table of contents sections</li>
+          <li>Footers and headers</li>
+          <li>Breadcrumbs</li>
+        </ul>
+        
+        <h3>Limits</h3>
+        <ul>
+          <li><strong>50 links</strong> maximum per page to prevent overload</li>
+          <li>Some websites may block access due to CORS policies</li>
+          <li>JavaScript-rendered content may not be captured</li>
+        </ul>
+        
+        <h3>Privacy</h3>
+        <p>
+          This tool uses a CORS proxy to fetch pages. The proxy servers see the URLs you explore, 
+          but no data is stored on our end. For sensitive URLs, consider the privacy implications.
+        </p>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- Template Core JS -->
+  <script src="../../app.js"></script>
+  
+  <!-- Link Explorer Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
+
