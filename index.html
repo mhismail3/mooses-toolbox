@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Moose's Toolbox</title>
+  <meta name="description" content="A collection of handy browser-based utility tools. No uploads, no accounts — just open and use.">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧰</text></svg>">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Landing Page Specific Styles -->
+  <style>
+    .tool-icon.tool-icon-photo {
+      border-radius: 50%;
+      overflow: hidden;
+      padding: 0;
+      border: none;
+    }
+    
+    .tool-icon.tool-icon-photo img {
+      width: 54px;
+      height: 54px;
+      object-fit: cover;
+      object-position: center;
+    }
+    
+    .intro {
+      margin-bottom: var(--space-xl);
+    }
+    
+    .intro p {
+      color: var(--color-text-muted);
+      font-size: var(--text-base);
+      margin: 0;
+    }
+    
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-lg);
+    }
+    
+    @media (min-width: 640px) {
+      .tools-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    .tool-card {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      padding: var(--space-xl);
+      background: var(--color-surface);
+      border: var(--border-retro);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-retro-sm);
+      text-decoration: none;
+      color: inherit;
+      transition: 
+        transform var(--duration-fast) ease,
+        box-shadow var(--theme-transition-duration) var(--theme-transition-ease),
+        background-color var(--theme-transition-duration) var(--theme-transition-ease),
+        border-color var(--theme-transition-duration) var(--theme-transition-ease);
+    }
+    
+    @media (hover: hover) {
+      .tool-card:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0px var(--retro-shadow-color);
+      }
+      
+      .tool-card:hover .tool-card-title {
+        color: var(--pine);
+      }
+    }
+    
+    .tool-card:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px var(--retro-shadow-color);
+    }
+    
+    .tool-card-icon {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      background: var(--color-surface-active);
+      border-radius: var(--radius-md);
+    }
+    
+    .tool-card-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tool-card-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      margin: 0 0 0.25em;
+      transition: color var(--duration-normal) ease;
+    }
+    
+    .tool-card-desc {
+      color: var(--color-text-muted);
+      font-size: var(--text-base);
+      margin: 0;
+      line-height: var(--leading-normal);
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: var(--space-3xl);
+      margin-bottom: -1.2rem;
+      padding-top: var(--space-xl);
+      border-top: 1px dashed var(--color-border);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .footer a {
+      color: var(--aero);
+    }
+    
+    .footer a:hover {
+      color: var(--clay);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="tool-icon tool-icon-photo">
+          <img src="icon.png" alt="Moose">
+        </div>
+        <h1 class="tool-title">Moose's Toolbox</h1>
+      </div>
+      
+      <div class="top-bar-right">
+        <!-- Theme Toggle Button -->
+        <button 
+          type="button" 
+          class="header-btn" 
+          id="theme-toggle"
+          aria-label="Toggle dark mode"
+        >
+          <span class="theme-toggle-wrap">
+            <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+        
+        <!-- Info Button -->
+        <button 
+          type="button" 
+          class="header-btn" 
+          id="info-btn"
+          aria-label="Show information"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="frame">
+      <section class="panel">
+        <div class="intro">
+          <p>
+            A collection of handy browser-based utilities. No uploads, no accounts — just open and use.
+          </p>
+        </div>
+        
+        <div class="panel-content">
+          <div class="tools-grid">
+            <!-- EXIF Viewer -->
+            <a href="tools/exif-viewer/" class="tool-card">
+              <div class="tool-card-icon">📷</div>
+              <div class="tool-card-content">
+                <h2 class="tool-card-title">EXIF Viewer</h2>
+                <p class="tool-card-desc">
+                  View photo metadata including camera settings, GPS location, and timestamps.
+                </p>
+              </div>
+            </a>
+            
+            <!-- Add more tools here as you create them -->
+            <!--
+            <a href="tools/your-tool/" class="tool-card">
+              <div class="tool-card-icon">🔧</div>
+              <div class="tool-card-content">
+                <h2 class="tool-card-title">Tool Name</h2>
+                <p class="tool-card-desc">
+                  Brief description of what the tool does.
+                </p>
+              </div>
+            </a>
+            -->
+          </div>
+          
+          <div class="footer">
+            <p>
+              Built by <a href="https://mhismail.com" target="_blank" rel="noopener">Mohsin</a> · 
+              <a href="https://github.com/mhismail3" target="_blank" rel="noopener">GitHub</a>
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Info Modal -->
+    <dialog id="info-modal" class="info-modal">
+      <div class="modal-header">
+        <h2>About</h2>
+        <button type="button" class="modal-close" aria-label="Close modal">×</button>
+      </div>
+      <div class="modal-body">
+        <h3>What is this?</h3>
+        <p>
+          A collection of small, focused browser-based tools. Each tool runs 
+          entirely in your browser — no files are uploaded to any server.
+        </p>
+        
+        <h3>Privacy</h3>
+        <p>
+          All tools process data locally on your device. Your files and data 
+          never leave your browser.
+        </p>
+        
+        <h3>Adding Tools</h3>
+        <p>
+          Each tool lives in its own folder under <code>tools/</code>. Check the 
+          <code>_template/</code> folder for a starter template to create new tools.
+        </p>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- Core Template JS -->
+  <script src="app.js"></script>
+</body>
+</html>

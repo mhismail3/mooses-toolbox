@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>EXIF Viewer</title>
+  <meta name="description" content="Upload a photo to view its EXIF metadata including camera settings, GPS coordinates, and more.">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📷</text></svg>">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Template Styles -->
+  <link rel="stylesheet" href="../../styles.css">
+  
+  <!-- EXIF Viewer Specific Styles -->
+  <style>
+    .image-preview-container {
+      margin-bottom: var(--space-xl);
+    }
+    
+    .image-preview {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-lg);
+    }
+    
+    .image-preview.visible {
+      display: flex;
+    }
+    
+    .image-preview img {
+      max-width: 100%;
+      max-height: 350px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-container);
+    }
+    
+    .image-info {
+      margin-top: var(--space-base);
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .image-info strong {
+      color: var(--color-text);
+    }
+    
+    .exif-sections {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xl);
+    }
+    
+    .exif-section {
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    
+    .exif-section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: 0.75rem 1rem;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border-subtle);
+      font-weight: 600;
+      font-size: var(--text-base);
+    }
+    
+    .exif-section-icon {
+      font-size: 1.2rem;
+    }
+    
+    .gps-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+      padding: 0.5rem 0.75rem;
+      background: var(--color-surface-active);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      color: var(--pine);
+    }
+    
+    .gps-link:hover {
+      background: var(--aero);
+      color: white;
+    }
+    
+    .no-data-message {
+      padding: 1rem;
+      text-align: center;
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+    
+    .actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-xl);
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 640px) {
+      .actions {
+        flex-direction: column;
+      }
+      
+      .actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="tool-icon">📷</div>
+        <h1 class="tool-title">EXIF Viewer</h1>
+      </div>
+      
+      <div class="top-bar-right">
+        <button type="button" class="header-btn" id="theme-toggle" aria-label="Toggle dark mode">
+          <span class="theme-toggle-wrap">
+            <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+        
+        <button type="button" class="header-btn" id="info-btn" aria-label="Show tool information">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="frame">
+      <section class="panel">
+        <div class="panel-head">
+          <span class="eyebrow">Upload Photo</span>
+        </div>
+        
+        <div class="panel-content">
+          <!-- Drop Zone -->
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-text">
+              <strong>Drop an image here</strong>
+              or click to browse
+            </div>
+            <input type="file" id="file-input" accept="image/jpeg,image/jpg,image/tiff">
+          </div>
+          
+          <!-- Image Preview -->
+          <div class="image-preview-container">
+            <div class="image-preview" id="image-preview">
+              <img id="preview-img" src="" alt="Uploaded image preview">
+              <div class="image-info">
+                <strong id="file-name"></strong>
+                <span id="file-meta"></span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- EXIF Data Display -->
+          <div id="exif-results" hidden>
+            <div class="exif-sections">
+              <!-- Camera Info -->
+              <div class="exif-section" id="camera-section">
+                <div class="exif-section-header">
+                  <span class="exif-section-icon">📷</span>
+                  Camera & Settings
+                </div>
+                <table class="data-table">
+                  <tbody id="camera-data"></tbody>
+                </table>
+              </div>
+              
+              <!-- Date/Time -->
+              <div class="exif-section" id="datetime-section">
+                <div class="exif-section-header">
+                  <span class="exif-section-icon">📅</span>
+                  Date & Time
+                </div>
+                <table class="data-table">
+                  <tbody id="datetime-data"></tbody>
+                </table>
+              </div>
+              
+              <!-- GPS Info -->
+              <div class="exif-section" id="gps-section">
+                <div class="exif-section-header">
+                  <span class="exif-section-icon">📍</span>
+                  Location
+                </div>
+                <div id="gps-data"></div>
+              </div>
+              
+              <!-- Image Info -->
+              <div class="exif-section" id="image-section">
+                <div class="exif-section-header">
+                  <span class="exif-section-icon">🖼️</span>
+                  Image Details
+                </div>
+                <table class="data-table">
+                  <tbody id="image-data"></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="actions">
+              <button type="button" class="btn" id="copy-btn">
+                📋 Copy All Data
+              </button>
+              <button type="button" class="btn" id="clear-btn">
+                🗑️ Clear
+              </button>
+            </div>
+          </div>
+          
+          <!-- Empty State (shown when no EXIF data) -->
+          <div id="no-exif" class="empty-state" hidden>
+            <div class="empty-state-icon">🔍</div>
+            <p class="mb-0">No EXIF data found in this image.</p>
+            <p class="muted mt-sm">EXIF data is typically found in photos from digital cameras and smartphones.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Info Modal -->
+    <dialog id="info-modal" class="info-modal">
+      <div class="modal-header">
+        <h2>About EXIF Viewer</h2>
+        <button type="button" class="modal-close" aria-label="Close modal">×</button>
+      </div>
+      <div class="modal-body">
+        <h3>What is EXIF?</h3>
+        <p>
+          EXIF (Exchangeable Image File Format) is metadata embedded in photos by 
+          digital cameras and smartphones. It includes information like:
+        </p>
+        <ul>
+          <li><strong>Camera</strong> — Make, model, lens info</li>
+          <li><strong>Settings</strong> — Aperture, shutter speed, ISO, focal length</li>
+          <li><strong>Date & Time</strong> — When the photo was taken</li>
+          <li><strong>GPS</strong> — Location coordinates (if enabled)</li>
+          <li><strong>Image</strong> — Dimensions, orientation, color space</li>
+        </ul>
+        
+        <h3>How to Use</h3>
+        <ol>
+          <li>Drop a JPEG or TIFF image onto the upload area, or click to browse</li>
+          <li>View the extracted EXIF data organized by category</li>
+          <li>Click the GPS coordinates to open in Google Maps</li>
+          <li>Use "Copy All Data" to copy the metadata as text</li>
+        </ol>
+        
+        <h3>Privacy</h3>
+        <p>
+          Your images are processed entirely in your browser. <strong>No files are 
+          uploaded to any server.</strong> This tool is 100% client-side.
+        </p>
+        
+        <h3>Supported Formats</h3>
+        <p>
+          JPEG and TIFF images are supported. PNG, GIF, and WebP files typically 
+          don't contain EXIF data.
+        </p>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- EXIF.js Library (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/exif-js@2.3.0/exif.min.js"></script>
+  
+  <!-- Template Core JS -->
+  <script src="../../app.js"></script>
+  
+  <!-- EXIF Viewer Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
+
+

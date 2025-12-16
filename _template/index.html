@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       TOOL TEMPLATE
+       
+       A minimal, reusable template for single-page utility tools.
+       
+       TO CREATE A NEW TOOL:
+       1. Copy this entire folder to tools/your-tool-name/
+       2. Update the <title> and meta description
+       3. Change the tool icon (emoji or image) in .tool-icon
+       4. Update the tool title in .tool-title
+       5. Write your instructions in #info-modal .modal-body
+       6. Add your tool's UI inside .panel-content
+       7. Create an app.js for your tool's logic
+       8. Add your tool to the landing page (../index.html)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  
+  <title>Tool Template</title>
+  <meta name="description" content="A utility tool built with the tool template.">
+  
+  <!-- Favicon (replace emoji with your own) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Shared Styles (adjust path based on tool location) -->
+  <!-- From tools/your-tool/ use: ../../styles.css -->
+  <link rel="stylesheet" href="../styles.css">
+  
+  <!-- Tool-Specific Styles (optional) -->
+  <style>
+    /* Add your tool's custom styles here */
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         HEADER
+         Fixed navigation bar with tool icon, title, and action buttons.
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <!-- Tool Icon: Use an emoji, SVG, or image -->
+        <div class="tool-icon">
+          🔧
+        </div>
+        <!-- Tool Title -->
+        <h1 class="tool-title">Tool Template</h1>
+      </div>
+      
+      <div class="top-bar-right">
+        <!-- Theme Toggle Button -->
+        <button 
+          type="button" 
+          class="header-btn" 
+          id="theme-toggle"
+          aria-label="Toggle dark mode"
+        >
+          <span class="theme-toggle-wrap">
+            <!-- Sun icon (shown in light mode) -->
+            <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <!-- Moon icon (shown in dark mode) -->
+            <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+        
+        <!-- Info Button -->
+        <button 
+          type="button" 
+          class="header-btn" 
+          id="info-btn"
+          aria-label="Show tool information"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         MAIN CONTENT
+         The .frame centers content, .panel provides the container styling.
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <main class="frame">
+      <section class="panel">
+        <!-- Optional panel header with eyebrow label -->
+        <div class="panel-head">
+          <span class="eyebrow">Getting Started</span>
+        </div>
+        
+        <!-- Your tool's UI goes here -->
+        <div class="panel-content">
+          <p>
+            This is the base template. Replace this content with your tool's interface.
+          </p>
+          
+          <!-- Example: Empty state -->
+          <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <p class="mb-0">Your tool content goes here.</p>
+          </div>
+          
+          <!-- Example: Button -->
+          <div class="mt-xl">
+            <button type="button" class="btn primary">
+              Example Button
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════════
+         INFO MODAL
+         Native <dialog> element for accessible modal.
+         Update the content inside .modal-body with your tool's instructions.
+         ═══════════════════════════════════════════════════════════════════════════ -->
+    <dialog id="info-modal" class="info-modal">
+      <div class="modal-header">
+        <h2>How to Use</h2>
+        <button type="button" class="modal-close" aria-label="Close modal">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Replace this content with your tool's instructions -->
+        <h3>Welcome to the Tool Template</h3>
+        <p>
+          This template provides a foundation for building single-page utility tools
+          with a consistent, polished design.
+        </p>
+        
+        <h3>Features</h3>
+        <ul>
+          <li><strong>Responsive Design</strong> — Works on mobile and desktop</li>
+          <li><strong>Dark Mode</strong> — Toggle between light and dark themes</li>
+          <li><strong>Accessible</strong> — Built with semantic HTML and ARIA</li>
+          <li><strong>No Build Step</strong> — Pure HTML, CSS, and JavaScript</li>
+        </ul>
+        
+        <h3>Customization</h3>
+        <ol>
+          <li>Update the tool icon and title in the header</li>
+          <li>Replace the panel content with your UI</li>
+          <li>Write your instructions in this modal</li>
+          <li>Add your logic in a separate <code>app.js</code> file</li>
+        </ol>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- Shared Template JS (adjust path based on tool location) -->
+  <!-- From tools/your-tool/ use: ../../app.js -->
+  <script src="../app.js"></script>
+  
+  <!-- Your tool's JS (create this file for your tool's logic) -->
+  <!-- <script src="app.js"></script> -->
+</body>
+</html>
+
