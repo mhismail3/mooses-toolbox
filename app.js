@@ -257,6 +257,61 @@
   document.head.appendChild(toastStyles);
 
   // ═══════════════════════════════════════════════════════════════════════════════
+  // HEADER SCROLL FADE
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  let lastScrollY = 0;
+  let ticking = false;
+
+  /**
+   * Handle scroll to fade header in/out
+   */
+  function handleHeaderScroll() {
+    const header = document.querySelector('.top-bar');
+    if (!header) return;
+
+    const currentScrollY = window.scrollY;
+    const scrollThreshold = 30; // Start fading after 50px of scroll
+
+    if (currentScrollY > scrollThreshold) {
+      // Scrolled down past threshold - fade out
+      header.classList.add('header-hidden');
+    } else {
+      // At top or scrolled up - fade in
+      header.classList.remove('header-hidden');
+    }
+
+    lastScrollY = currentScrollY;
+    ticking = false;
+  }
+
+  /**
+   * Initialize header scroll behavior
+   */
+  function initHeaderScroll() {
+    // Add CSS for header fade
+    const headerStyles = document.createElement('style');
+    headerStyles.textContent = `
+      .top-bar {
+        transition: opacity 0.3s ease, transform 0.3s ease;
+      }
+      .top-bar.header-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+    `;
+    document.head.appendChild(headerStyles);
+
+    // Listen for scroll with requestAnimationFrame for performance
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(handleHeaderScroll);
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   // INITIALIZATION
   // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -293,6 +348,9 @@
     
     // Initialize modal
     initModal();
+    
+    // Initialize header scroll fade
+    initHeaderScroll();
     
     // Listen for system theme changes
     if (window.matchMedia) {
