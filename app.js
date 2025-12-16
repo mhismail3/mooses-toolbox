@@ -39,6 +39,30 @@
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_KEY, theme);
     updateThemeToggleIcons(theme);
+    updateThemeColor(theme);
+  }
+
+  /**
+   * Update theme-color meta tag for iOS Safari status bar
+   */
+  function updateThemeColor(theme) {
+    const lightColor = '#f8f3e8';
+    const darkColor = '#1a1816';
+    const color = theme === 'dark' ? darkColor : lightColor;
+    
+    // Update or create theme-color meta tags
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.name = 'theme-color';
+      document.head.appendChild(metaThemeColor);
+    }
+    metaThemeColor.content = color;
+    
+    // Also update the media-specific ones to match manual selection
+    document.querySelectorAll('meta[name="theme-color"][media]').forEach(meta => {
+      meta.content = color;
+    });
   }
 
   /**
