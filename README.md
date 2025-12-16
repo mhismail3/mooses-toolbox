@@ -1,10 +1,30 @@
-# Moose's Tools
+# Moose's Toolbox
 
 A collection of browser-based utility tools with a polished, responsive design. All tools run entirely in your browser — no files are uploaded to any server.
 
+## View Locally
+
+The simplest way — just open `index.html` directly in your browser:
+
+```bash
+open index.html
+```
+
+Or use a local server for a more realistic environment:
+
+```bash
+# Using Python (built-in)
+python3 -m http.server 3000
+
+# Using Node.js
+npx serve .
+```
+
+Then visit `http://localhost:3000` in your browser.
+
 ## Live Site
 
-Visit: **[your-username.github.io/tool-template/](https://your-username.github.io/tool-template/)**
+Visit: **[mhismail3.github.io/mooses-toolbox/](https://mhismail3.github.io/mooses-toolbox/)**
 
 ## File Structure
 
@@ -143,23 +163,6 @@ Edit `index.html` to add your tool to the grid:
   </div>
 </a>
 ```
-
-## Local Development
-
-To test locally, serve the files with any static server:
-
-```bash
-# Using npx (Node.js)
-npx serve .
-
-# Using Python
-python3 -m http.server 3000
-
-# Using PHP
-php -S localhost:3000
-```
-
-Then open `http://localhost:3000` in your browser.
 
 ## Available Components
 
