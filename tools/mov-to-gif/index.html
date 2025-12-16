@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>MOV to GIF Converter</title>
+  <meta name="description" content="Convert MOV and MP4 videos to GIF animations entirely in your browser. Adjust quality, framerate, and size.">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Template Styles -->
+  <link rel="stylesheet" href="../../styles.css">
+  
+  <!-- MOV to GIF Specific Styles -->
+  <style>
+    .video-preview-container {
+      margin-bottom: var(--space-xl);
+    }
+    
+    .video-preview {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-lg);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-subtle);
+    }
+    
+    .video-preview.visible {
+      display: flex;
+    }
+    
+    .video-preview video {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: var(--radius-sm);
+      background: #000;
+    }
+    
+    .video-info {
+      margin-top: var(--space-base);
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .video-info strong {
+      color: var(--color-text);
+    }
+    
+    .video-meta {
+      display: flex;
+      gap: var(--space-lg);
+      justify-content: center;
+      margin-top: var(--space-sm);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+    }
+    
+    /* Settings Panel */
+    .settings-panel {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-xl);
+      padding: var(--space-xl);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-xl);
+    }
+    
+    .settings-panel.visible {
+      display: flex;
+    }
+    
+    .settings-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-weight: 600;
+      font-size: var(--text-base);
+      color: var(--color-text);
+      margin-bottom: var(--space-sm);
+    }
+    
+    .settings-header-icon {
+      font-size: 1.2rem;
+    }
+    
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-xl);
+    }
+    
+    @media (min-width: 640px) {
+      .settings-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    
+    .setting-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: var(--color-text);
+    }
+    
+    .setting-value {
+      font-family: var(--font-mono);
+      font-weight: 400;
+      color: var(--pine);
+      background: var(--color-surface-active);
+      padding: 0.15em 0.5em;
+      border-radius: var(--radius-sm);
+    }
+    
+    .setting-hint {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2xs);
+    }
+    
+    /* Range slider styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: var(--color-border);
+      border-radius: var(--radius-full);
+      outline: none;
+      cursor: pointer;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--aero);
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform var(--duration-fast) ease;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--aero);
+      border: 2px solid var(--ink);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    /* Select dropdown */
+    .select-wrapper {
+      position: relative;
+    }
+    
+    .select-wrapper select {
+      width: 100%;
+      padding: 0.5rem 2rem 0.5rem 0.75rem;
+      border: var(--border-retro);
+      border-radius: var(--radius-sm);
+      background: var(--bg-white);
+      color: var(--color-text);
+      font-family: inherit;
+      font-size: var(--text-base);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    
+    .select-wrapper::after {
+      content: '▼';
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.6rem;
+      color: var(--color-text-muted);
+      pointer-events: none;
+    }
+    
+    /* Progress Section */
+    .progress-section {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-base);
+      padding: var(--space-xl);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-xl);
+    }
+    
+    .progress-section.visible {
+      display: flex;
+    }
+    
+    .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .progress-status {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    
+    .progress-percent {
+      font-family: var(--font-mono);
+      color: var(--pine);
+    }
+    
+    .progress-bar-container {
+      width: 100%;
+      height: 12px;
+      background: var(--color-border);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--aero), var(--pine));
+      border-radius: var(--radius-full);
+      transition: width 0.3s ease;
+    }
+    
+    .progress-detail {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+    
+    /* Output Section */
+    .output-section {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+    
+    .output-section.visible {
+      display: flex;
+    }
+    
+    .output-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-weight: 600;
+      font-size: var(--text-lg);
+    }
+    
+    .gif-preview-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-xl);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+    }
+    
+    .gif-preview {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-container);
+    }
+    
+    .gif-info {
+      display: flex;
+      gap: var(--space-xl);
+      margin-top: var(--space-lg);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    
+    .gif-info strong {
+      color: var(--color-text);
+    }
+    
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    
+    @media (max-width: 640px) {
+      .actions {
+        flex-direction: column;
+      }
+      
+      .actions .btn {
+        width: 100%;
+      }
+    }
+    
+    .convert-actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+    }
+    
+    @media (max-width: 640px) {
+      .convert-actions {
+        flex-direction: column;
+      }
+      
+      .convert-actions .btn {
+        width: 100%;
+      }
+    }
+    
+    /* Footer */
+    .tool-footer {
+      text-align: center;
+      margin-top: var(--space-xl);
+      padding-top: var(--space-lg);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+    
+    .tool-footer a {
+      color: var(--aero);
+    }
+    
+    .tool-footer a:hover {
+      color: var(--clay);
+    }
+    
+    /* Estimation box */
+    .estimation-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-base) var(--space-lg);
+      background: var(--color-surface-active);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      margin-top: var(--space-lg);
+    }
+    
+    .estimation-label {
+      color: var(--color-text-muted);
+    }
+    
+    .estimation-value {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--pine);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="tool-icon">🎬</div>
+        <h1 class="tool-title">MOV to GIF</h1>
+      </div>
+      
+      <div class="top-bar-right">
+        <button type="button" class="header-btn" id="theme-toggle" aria-label="Toggle dark mode">
+          <span class="theme-toggle-wrap">
+            <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+        
+        <button type="button" class="header-btn" id="info-btn" aria-label="Show tool information">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="4" r="0.5" fill="currentColor"></circle>
+            <line x1="10" y1="8" x2="10" y2="16"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="frame">
+      <section class="panel">
+        <div class="panel-head">
+          <span class="eyebrow">Upload Video</span>
+        </div>
+        
+        <div class="panel-content">
+          <!-- Drop Zone -->
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-icon">🎥</div>
+            <div class="drop-zone-text">
+              <strong>Drop a video here</strong>
+              or click to browse
+            </div>
+            <input type="file" id="file-input" accept="video/quicktime,video/mp4,video/x-m4v,.mov,.mp4,.m4v">
+          </div>
+          
+          <!-- Video Preview -->
+          <div class="video-preview-container">
+            <div class="video-preview" id="video-preview">
+              <video id="preview-video" controls muted playsinline></video>
+              <div class="video-info">
+                <strong id="file-name"></strong>
+                <div class="video-meta">
+                  <span id="video-dimensions"></span>
+                  <span id="video-duration"></span>
+                  <span id="file-size"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Settings Panel -->
+          <div class="settings-panel" id="settings-panel">
+            <div class="settings-header">
+              <span class="settings-header-icon">⚙️</span>
+              Output Settings
+            </div>
+            
+            <div class="settings-grid">
+              <!-- Width Setting -->
+              <div class="setting-group">
+                <label class="setting-label">
+                  Width
+                  <span class="setting-value" id="width-value">480px</span>
+                </label>
+                <input 
+                  type="range" 
+                  id="width-slider" 
+                  min="100" 
+                  max="1920" 
+                  value="480" 
+                  step="10"
+                >
+                <div class="setting-hint">Height adjusts automatically</div>
+              </div>
+              
+              <!-- Framerate Setting -->
+              <div class="setting-group">
+                <label class="setting-label">
+                  Framerate
+                  <span class="setting-value" id="fps-value">10 FPS</span>
+                </label>
+                <div class="select-wrapper">
+                  <select id="fps-select">
+                    <option value="5">5 FPS — Smaller file</option>
+                    <option value="10" selected>10 FPS — Balanced</option>
+                    <option value="15">15 FPS — Smoother</option>
+                    <option value="20">20 FPS — High quality</option>
+                    <option value="30">30 FPS — Maximum</option>
+                  </select>
+                </div>
+                <div class="setting-hint">Lower = smaller file size</div>
+              </div>
+              
+              <!-- Quality Setting -->
+              <div class="setting-group">
+                <label class="setting-label">
+                  Quality
+                  <span class="setting-value" id="quality-value">10</span>
+                </label>
+                <input 
+                  type="range" 
+                  id="quality-slider" 
+                  min="1" 
+                  max="20" 
+                  value="10" 
+                  step="1"
+                >
+                <div class="setting-hint">Higher = better colors, larger file</div>
+              </div>
+            </div>
+            
+            <!-- Estimation -->
+            <div class="estimation-box">
+              <span class="estimation-label">Estimated frames:</span>
+              <span class="estimation-value" id="frame-estimate">—</span>
+            </div>
+            
+            <!-- Convert Actions -->
+            <div class="convert-actions">
+              <button type="button" class="btn primary" id="convert-btn">
+                🚀 Convert to GIF
+              </button>
+              <button type="button" class="btn" id="change-video-btn">
+                📁 Change Video
+              </button>
+            </div>
+          </div>
+          
+          <!-- Progress Section -->
+          <div class="progress-section" id="progress-section">
+            <div class="progress-header">
+              <span class="progress-status" id="progress-status">Extracting frames...</span>
+              <span class="progress-percent" id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="progress-detail" id="progress-detail">Preparing...</div>
+            <div class="convert-actions">
+              <button type="button" class="btn" id="cancel-btn">
+                ✕ Cancel
+              </button>
+            </div>
+          </div>
+          
+          <!-- Output Section -->
+          <div class="output-section" id="output-section">
+            <div class="output-header">
+              <span>✨</span>
+              Your GIF is ready!
+            </div>
+            
+            <div class="gif-preview-container">
+              <img id="gif-preview" class="gif-preview" src="" alt="Generated GIF preview">
+              <div class="gif-info">
+                <span><strong>Size:</strong> <span id="gif-size">—</span></span>
+                <span><strong>Dimensions:</strong> <span id="gif-dimensions">—</span></span>
+                <span><strong>Frames:</strong> <span id="gif-frames">—</span></span>
+              </div>
+            </div>
+            
+            <div class="actions">
+              <button type="button" class="btn primary" id="download-btn">
+                💾 Download GIF
+              </button>
+              <button type="button" class="btn" id="reconvert-btn">
+                🔄 Adjust & Reconvert
+              </button>
+              <button type="button" class="btn" id="new-video-btn">
+                📁 New Video
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <footer class="tool-footer">
+        <p>
+          Built by <a href="https://mhismail.com" target="_blank" rel="noopener">Mohsin</a> · 
+          <a href="../../">View the Toolbox</a>
+        </p>
+      </footer>
+    </main>
+
+    <!-- Info Modal -->
+    <dialog id="info-modal" class="info-modal">
+      <div class="modal-header">
+        <h2>About MOV to GIF</h2>
+        <button type="button" class="modal-close" aria-label="Close modal">×</button>
+      </div>
+      <div class="modal-body">
+        <h3>What does this tool do?</h3>
+        <p>
+          Convert MOV and MP4 video files to animated GIFs entirely in your browser.
+          Perfect for creating shareable animations from screen recordings, video clips,
+          or any short video content.
+        </p>
+        
+        <h3>How to Use</h3>
+        <ol>
+          <li>Drop a video file onto the upload area, or click to browse</li>
+          <li>Adjust the output settings:
+            <ul>
+              <li><strong>Width</strong> — Controls the GIF dimensions (height scales proportionally)</li>
+              <li><strong>Framerate</strong> — How many frames per second (lower = smaller file)</li>
+              <li><strong>Quality</strong> — Color accuracy (higher = better colors, larger file)</li>
+            </ul>
+          </li>
+          <li>Click "Convert to GIF" and wait for processing</li>
+          <li>Download your GIF or adjust settings and reconvert</li>
+        </ol>
+        
+        <h3>Tips for Smaller Files</h3>
+        <ul>
+          <li>Reduce the output width (480px or less works great)</li>
+          <li>Use a lower framerate (5-10 FPS is usually sufficient)</li>
+          <li>Keep videos short — GIFs grow quickly with duration</li>
+        </ul>
+        
+        <h3>Privacy</h3>
+        <p>
+          Your videos are processed entirely in your browser. <strong>No files are 
+          uploaded to any server.</strong> This tool is 100% client-side.
+        </p>
+        
+        <h3>Supported Formats</h3>
+        <p>
+          MOV, MP4, and M4V video files are supported. The exact codec support
+          depends on your browser.
+        </p>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- gif.js Library (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+  
+  <!-- Template Core JS -->
+  <script src="../../app.js"></script>
+  
+  <!-- MOV to GIF Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
+
