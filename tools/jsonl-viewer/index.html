@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Theme color for iOS Safari status bar -->
+  <meta name="theme-color" content="#f8f3e8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1816" media="(prefers-color-scheme: dark)">
+
+  <title>JSONL Viewer</title>
+  <meta name="description" content="Upload and view JSONL (JSON Lines) files with syntax highlighting and easy navigation.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>{ }</text></svg>">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Template Styles -->
+  <link rel="stylesheet" href="../../styles.css">
+
+  <!-- JSONL Viewer Specific Styles -->
+  <style>
+    .file-info {
+      display: none;
+      align-items: center;
+      gap: var(--space-base);
+      padding: var(--space-base) var(--space-lg);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-xl);
+    }
+
+    .file-info.visible {
+      display: flex;
+    }
+
+    .file-info-icon {
+      font-size: 1.5rem;
+    }
+
+    .file-info-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-info-name {
+      font-weight: 600;
+      color: var(--color-text);
+      word-break: break-all;
+    }
+
+    .file-info-meta {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .stats-bar {
+      display: none;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+    }
+
+    .stats-bar.visible {
+      display: flex;
+    }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 0.35rem 0.7rem;
+      background: var(--color-surface-active);
+      border-radius: var(--radius-full);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+    }
+
+    .stat-chip-label {
+      color: var(--color-text-muted);
+    }
+
+    .entries-container {
+      display: none;
+      flex-direction: column;
+      gap: var(--space-base);
+    }
+
+    .entries-container.visible {
+      display: flex;
+    }
+
+    .entry-card {
+      border: 1px solid var(--color-border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--color-surface);
+    }
+
+    .entry-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      background: var(--color-surface-elevated);
+      border-bottom: 1px solid var(--color-border-subtle);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .entry-header:hover {
+      background: var(--color-surface-hover);
+    }
+
+    .entry-header-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .entry-number {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      min-width: 3ch;
+    }
+
+    .entry-preview {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 400px;
+    }
+
+    @media (max-width: 640px) {
+      .entry-preview {
+        max-width: 180px;
+      }
+    }
+
+    .entry-toggle {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      transition: transform var(--duration-fast) ease;
+    }
+
+    .entry-card.expanded .entry-toggle {
+      transform: rotate(180deg);
+    }
+
+    .entry-body {
+      display: none;
+      padding: 1rem;
+      background: var(--color-surface);
+    }
+
+    .entry-card.expanded .entry-body {
+      display: block;
+    }
+
+    .entry-json {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+      color: var(--color-text);
+    }
+
+    /* JSON syntax highlighting */
+    .json-key {
+      color: var(--pine);
+    }
+
+    .json-string {
+      color: var(--clay);
+    }
+
+    .json-number {
+      color: #6b5b95;
+    }
+
+    .json-boolean {
+      color: var(--aero);
+    }
+
+    .json-null {
+      color: var(--color-text-muted);
+    }
+
+    [data-theme="dark"] .json-number {
+      color: #b19cd9;
+    }
+
+    .entry-actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-base);
+      padding-top: var(--space-base);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-xl);
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .actions {
+        flex-direction: column;
+      }
+
+      .actions .btn {
+        width: 100%;
+      }
+    }
+
+    .pagination {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-base);
+      margin-top: var(--space-xl);
+      padding-top: var(--space-lg);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .pagination.visible {
+      display: flex;
+    }
+
+    .pagination-info {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .tool-footer {
+      text-align: center;
+      margin-top: var(--space-xl);
+      padding-top: var(--space-lg);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+    }
+
+    .tool-footer a {
+      color: var(--aero);
+    }
+
+    .tool-footer a:hover {
+      color: var(--clay);
+    }
+
+    .error-entries {
+      margin-top: var(--space-xl);
+    }
+
+    .error-entry {
+      padding: var(--space-base);
+      background: rgba(196, 91, 55, 0.1);
+      border: 1px solid rgba(196, 91, 55, 0.3);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .error-entry-line {
+      font-weight: 600;
+      color: var(--clay);
+      margin-bottom: var(--space-xs);
+    }
+
+    .error-entry-content {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .search-bar {
+      display: none;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+    }
+
+    .search-bar.visible {
+      display: flex;
+    }
+
+    .search-bar .input {
+      flex: 1;
+    }
+
+    .search-results-info {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-base);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="tool-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <h1 class="tool-title">JSONL Viewer</h1>
+      </div>
+
+      <div class="top-bar-right">
+        <button type="button" class="header-btn" id="theme-toggle" aria-label="Toggle dark mode">
+          <span class="theme-toggle-wrap">
+            <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+        </button>
+
+        <button type="button" class="header-btn" id="info-btn" aria-label="Show tool information">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10" cy="4" r="0.5" fill="currentColor"></circle>
+            <line x1="10" y1="8" x2="10" y2="16"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="frame">
+      <section class="panel">
+        <div class="panel-head">
+          <span class="eyebrow">Upload JSONL File</span>
+        </div>
+
+        <div class="panel-content">
+          <!-- Drop Zone -->
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-icon">{ }</div>
+            <div class="drop-zone-text">
+              <strong>Drop a JSONL file here</strong>
+              or click to browse
+            </div>
+            <input type="file" id="file-input" accept=".jsonl,.ndjson,.json">
+          </div>
+
+          <!-- File Info -->
+          <div class="file-info" id="file-info">
+            <div class="file-info-icon">{ }</div>
+            <div class="file-info-details">
+              <div class="file-info-name" id="file-name"></div>
+              <div class="file-info-meta" id="file-meta"></div>
+            </div>
+          </div>
+
+          <!-- Stats Bar -->
+          <div class="stats-bar" id="stats-bar">
+            <div class="stat-chip">
+              <span class="stat-chip-label">Entries:</span>
+              <strong id="stat-entries">0</strong>
+            </div>
+            <div class="stat-chip">
+              <span class="stat-chip-label">Valid:</span>
+              <strong id="stat-valid">0</strong>
+            </div>
+            <div class="stat-chip" id="stat-errors-chip" style="display: none;">
+              <span class="stat-chip-label">Errors:</span>
+              <strong id="stat-errors">0</strong>
+            </div>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="search-bar" id="search-bar">
+            <input type="text" class="input" id="search-input" placeholder="Search entries...">
+            <button type="button" class="btn small" id="search-clear">Clear</button>
+          </div>
+
+          <div class="search-results-info" id="search-results-info" hidden></div>
+
+          <!-- Entries Container -->
+          <div class="entries-container" id="entries-container"></div>
+
+          <!-- Pagination -->
+          <div class="pagination" id="pagination">
+            <button type="button" class="btn small" id="prev-btn" disabled>Prev</button>
+            <span class="pagination-info" id="pagination-info"></span>
+            <button type="button" class="btn small" id="next-btn">Next</button>
+          </div>
+
+          <!-- Error Entries -->
+          <div class="error-entries" id="error-entries" hidden>
+            <h3>Parse Errors</h3>
+            <div id="error-list"></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="actions" id="actions" hidden>
+            <button type="button" class="btn" id="copy-btn">
+              Copy All JSON
+            </button>
+            <button type="button" class="btn" id="expand-all-btn">
+              Expand All
+            </button>
+            <button type="button" class="btn" id="collapse-all-btn">
+              Collapse All
+            </button>
+            <button type="button" class="btn" id="clear-btn">
+              Clear
+            </button>
+          </div>
+
+          <!-- Empty State (shown when file has no valid entries) -->
+          <div id="empty-state" class="empty-state" hidden>
+            <div class="empty-state-icon">{ }</div>
+            <p class="mb-0">No valid JSON entries found in this file.</p>
+            <p class="muted mt-sm">Each line in a JSONL file should be a valid JSON object.</p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="tool-footer">
+        <p>
+          Built by <a href="https://mhismail.com" target="_blank" rel="noopener">Mohsin</a> ·
+          <a href="../../">View the Toolbox</a>
+        </p>
+      </footer>
+    </main>
+
+    <!-- Info Modal -->
+    <dialog id="info-modal" class="info-modal">
+      <div class="modal-header">
+        <h2>About JSONL Viewer</h2>
+        <button type="button" class="modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h3>What is JSONL?</h3>
+        <p>
+          JSONL (JSON Lines) is a text format where each line is a valid JSON value,
+          typically a JSON object. It's commonly used for:
+        </p>
+        <ul>
+          <li><strong>Log files</strong> &mdash; Structured application logs</li>
+          <li><strong>Data exports</strong> &mdash; Database dumps and API responses</li>
+          <li><strong>ML datasets</strong> &mdash; Training data for machine learning</li>
+          <li><strong>Streaming data</strong> &mdash; Real-time event streams</li>
+        </ul>
+
+        <h3>How to Use</h3>
+        <ol>
+          <li>Drop a .jsonl, .ndjson, or .json file onto the upload area</li>
+          <li>View entries with syntax highlighting</li>
+          <li>Click an entry to expand/collapse its full JSON</li>
+          <li>Use search to filter entries by content</li>
+          <li>Copy individual entries or all data</li>
+        </ol>
+
+        <h3>Features</h3>
+        <ul>
+          <li>Syntax highlighting for JSON</li>
+          <li>Pagination for large files</li>
+          <li>Search/filter entries</li>
+          <li>Expand/collapse all entries</li>
+          <li>Copy to clipboard</li>
+          <li>Error reporting for invalid lines</li>
+        </ul>
+
+        <h3>Privacy</h3>
+        <p>
+          Your files are processed entirely in your browser. <strong>No files are
+          uploaded to any server.</strong> This tool is 100% client-side.
+        </p>
+      </div>
+    </dialog>
+  </div>
+
+  <!-- Template Core JS -->
+  <script src="../../app.js"></script>
+
+  <!-- JSONL Viewer Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
