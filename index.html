@@ -124,22 +124,27 @@
       line-height: var(--leading-snug);
     }
     
-    .footer {
+    .tool-footer {
       text-align: center;
-      margin-top: var(--space-3xl);
-      margin-bottom: -1.2rem;
-      padding-top: var(--space-xl);
-      border-top: 1px dashed var(--color-border);
+      margin-top: var(--space-xl);
+      padding-top: var(--space-lg);
       color: var(--color-text-muted);
       font-size: var(--text-sm);
     }
-    
-    .footer a {
+
+    .tool-footer a {
       color: var(--aero);
     }
-    
-    .footer a:hover {
+
+    .tool-footer a:hover {
       color: var(--clay);
+    }
+
+    /* Larger header title on mobile for home page */
+    @media (max-width: 480px) {
+      .tool-title {
+        font-size: 1.35rem;
+      }
     }
   </style>
 </head>
@@ -277,14 +282,14 @@
             </a>
             -->
           </div>
-          
-          <div class="footer">
-            <p>
-              Built by <a href="https://mhismail.com" target="_blank" rel="noopener">Mohsin</a>
-            </p>
-          </div>
         </div>
       </section>
+
+      <footer class="tool-footer">
+        <p>
+          Built by <a href="https://mhismail.com" target="_blank" rel="noopener">Mohsin</a>
+        </p>
+      </footer>
     </main>
 
     <!-- Info Modal -->
